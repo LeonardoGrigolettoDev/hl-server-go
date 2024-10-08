@@ -1,13 +1,25 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/LeonardoGrigolettoDev/fly-esp-server-go/config"
+	services "github.com/LeonardoGrigolettoDev/fly-esp-server-go/services/device"
+	"github.com/go-chi/chi/v5"
+)
 
 func main() {
-	g := gin.Default()
-	g.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "Hello World",
-		})
-	})
-	g.Run(":3000")
+	err := config.Load()
+	if err != nil {
+		panic(err)
+	}
+	r := chi.NewRouter()
+	r.Post("/device/", services.Create)
+	r.Put("/device/{id}", services.Update)
+	r.Delete("/device/{id}", services.Delete)
+	r.Get("/device/", services.List)
+	r.Get("/device/{id}", services.Get)
+
+	http.ListenAndServe(fmt.Sprintf(":%s", configs.GetServerPort()), r)
 }

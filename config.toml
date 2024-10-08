@@ -1,0 +1,8 @@
+[api]
+port = "9000"
+
+[database]
+host = "localhost"
+user="user_fly_esp"
+pass="1122"
+name="api_fly_esp"

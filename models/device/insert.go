@@ -12,9 +12,8 @@ func Insert(device Device) (id int64, err error) {
 	defer conn.Close()
 
 	sql := `INSERT INTRO device (mac, actionable, camera, drone) VALUES ($1, $2, $3, $4) RETURN id`
-	
-	err = conn.QueryRow(sql, device.MAC, device.Actionable, device.Camera, dev.Drone).Scan($id)
-	
-	
+
+	err = conn.QueryRow(sql, device.MAC, device.Actionable, device.Camera, device.Drone).Scan(id)
+
 	return
 }
