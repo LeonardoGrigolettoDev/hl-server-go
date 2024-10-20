@@ -8,6 +8,8 @@ import (
 	"os/exec"
 
 	postgres "github.com/LeonardoGrigolettoDev/fly-esp-server-go/database/postgre"
+	"github.com/LeonardoGrigolettoDev/fly-esp-server-go/redis"
+	"github.com/LeonardoGrigolettoDev/fly-esp-server-go/websocket"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv" // Importando o godotenv
 	_ "github.com/lib/pq"
@@ -38,7 +40,7 @@ func init() {
 
 func main() {
 	// Carregando variáveis de ambiente do arquivo .env
-
+	redis.ConnectRedis()
 	if len(os.Args) >= 2 {
 		var command = os.Args[1]
 		log.Println(command)
@@ -60,7 +62,7 @@ func main() {
 	defer db.Close()
 
 	r := mux.NewRouter()
-
+	r.HandleFunc("/ws", websocket.StreamVideoCapture)
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("API running!"))
