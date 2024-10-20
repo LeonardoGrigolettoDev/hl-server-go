@@ -9,7 +9,7 @@ import (
 
 	postgres "github.com/LeonardoGrigolettoDev/hl-server-go/database/postgre"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/redis"
-	"github.com/LeonardoGrigolettoDev/hl-server-go/websocket"
+	websockets "github.com/LeonardoGrigolettoDev/hl-server-go/websocket"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv" // Importando o godotenv
 	_ "github.com/lib/pq"
@@ -41,6 +41,8 @@ func init() {
 func main() {
 	// Carregando variáveis de ambiente do arquivo .env
 	redis.ConnectRedis()
+
+	// Verifica se há argumentos de linha de comando para migração ou ações no DB
 	if len(os.Args) >= 2 {
 		var command = os.Args[1]
 		log.Println(command)
@@ -55,21 +57,35 @@ func main() {
 			log.Println("Optional action command not found, initializing normal server.")
 		}
 	}
+
+	// Conectando ao PostgreSQL
 	db, err := postgres.PostgreSQLConnectDB()
 	if err != nil {
 		log.Fatalf("Error on connect DB (PostgreSQL): %v", err)
 	}
 	defer db.Close()
 
+	// Criando o roteador
 	r := mux.NewRouter()
-	r.HandleFunc("/ws", websocket.StreamVideoCapture)
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("API running!"))
 	}).Methods("GET")
-
+	r.HandleFunc("/ws", websockets.StreamVideoCapture) // Endpoint para WebSocket
+	http.HandleFunc("/image", func(w http.ResponseWriter, r *http.Request) {
+		// Verifica se a imagem existe
+		imgPath := "./websocket/image.jpg"
+		if _, err := os.Stat(imgPath); err == nil {
+			http.ServeFile(w, r, imgPath) // Serve a imagem atual
+		} else {
+			http.Error(w, "Image not found", http.StatusNotFound)
+		}
+	})
+	// Iniciando o servidor HTTP usando o roteador 'r'
 	log.Println("Server running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	if err := http.ListenAndServe(":8080", r); err != nil { // Passando 'r' como segundo argumento
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
 
 func executeDBActionType() {
