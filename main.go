@@ -7,9 +7,9 @@ import (
 	"os"
 	"os/exec"
 
-	postgres "github.com/LeonardoGrigolettoDev/fly-esp-server-go/database/postgre"
-	"github.com/LeonardoGrigolettoDev/fly-esp-server-go/redis"
-	"github.com/LeonardoGrigolettoDev/fly-esp-server-go/websocket"
+	postgres "github.com/LeonardoGrigolettoDev/hl-server-go/database/postgre"
+	"github.com/LeonardoGrigolettoDev/hl-server-go/redis"
+	"github.com/LeonardoGrigolettoDev/hl-server-go/websocket"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv" // Importando o godotenv
 	_ "github.com/lib/pq"

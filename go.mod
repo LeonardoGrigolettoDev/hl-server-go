@@ -9,7 +9,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.19.0
-	gocv.io/x/gocv v0.39.0
 )
 
 require (

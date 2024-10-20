@@ -1,11 +1,11 @@
 package websocket
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"gocv.io/x/gocv"
 )
 
 var upgrader = websocket.Upgrader{
@@ -23,8 +23,8 @@ func StreamVideoCapture(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// Cria uma janela para exibir o vídeo
-	window := gocv.NewWindow("Video Stream")
-	defer window.Close()
+	// window := gocv.NewWindow("Video Stream")
+	// defer window.Close()
 
 	for {
 		// Lê a mensagem do WebSocket
@@ -33,18 +33,19 @@ func StreamVideoCapture(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error reading message:", err)
 			break
 		}
+		fmt.Println(msg)
 
 		// Converte os bytes recebidos para uma matriz (frame)
-		img, err := gocv.IMDecode(msg, gocv.IMReadColor)
-		if err != nil {
-			log.Println("Error decoding image:", err)
-			continue
-		}
+		// img, err := gocv.IMDecode(msg, gocv.IMReadColor)
+		// if err != nil {
+		// 	log.Println("Error decoding image:", err)
+		// 	continue
+		// }
 
-		// Mostra o frame na janela
-		window.IMShow(img)
-		if window.WaitKey(1) >= 0 {
-			break
-		}
+		// // Mostra o frame na janela
+		// window.IMShow(img)
+		// if window.WaitKey(1) >= 0 {
+		// 	break
+		// }
 	}
 }
