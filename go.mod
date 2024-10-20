@@ -1,4 +1,4 @@
-module github.com/LeonardoGrigolettoDev/fly-esp-server-go
+module github.com/LeonardoGrigolettoDev/hl-server-go
 
 go 1.22.2
 
