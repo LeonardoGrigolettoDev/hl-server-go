@@ -1,17 +1,13 @@
 package websockets
 
 import (
-	"bytes"
-	"image"
-	"image/jpeg"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"net/http"
 
 	_ "image/png"
 
 	"github.com/gorilla/websocket"
-	"github.com/nfnt/resize"
 )
 
 var upgrader = websocket.Upgrader{
@@ -38,43 +34,44 @@ func StreamVideoCapture(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error reading message:", err)
 			break
 		}
+		fmt.Println(message)
 
 		// Verificando se é uma imagem válida
-		if isValidImage(message) {
-			// Salvando a imagem no disco
-			err = ioutil.WriteFile("image.jpg", message, 0644)
-			if err != nil {
-				log.Println("Error saving image:", err)
-			}
-		} else {
-			log.Println("Received invalid image")
-		}
+		// if isValidImage(message) {
+		// 	// Salvando a imagem no disco
+		// 	err = ioutil.WriteFile("image.jpg", message, 0644)
+		// 	if err != nil {
+		// 		log.Println("Error saving image:", err)
+		// 	}
+		// } else {
+		// 	log.Println("Received invalid image")
+		// }
 	}
 }
 
-func isValidImage(imageBytes []byte) bool {
-	img, _, err := image.Decode(bytes.NewReader(imageBytes))
-	if err != nil {
-		log.Println("Invalid image:", err)
-		return false
-	}
+// func isValidImage(imageBytes []byte) bool {
+// 	img, _, err := image.Decode(bytes.NewReader(imageBytes))
+// 	if err != nil {
+// 		log.Println("Invalid image:", err)
+// 		return false
+// 	}
 
-	// (Opcional) Redimensionar a imagem se necessário
-	resizedImg := resize.Resize(800, 0, img, resize.Lanczos3)
+// 	// (Opcional) Redimensionar a imagem se necessário
+// 	resizedImg := resize.Resize(800, 0, img, resize.Lanczos3)
 
-	// Salvar a imagem redimensionada (caso necessário)
-	out, err := ioutil.TempFile(".", "resized_*.jpg")
-	if err != nil {
-		log.Println("Error creating temp file:", err)
-		return false
-	}
-	defer out.Close()
+// 	// Salvar a imagem redimensionada (caso necessário)
+// 	out, err := ioutil.TempFile(".", "resized_*.jpg")
+// 	if err != nil {
+// 		log.Println("Error creating temp file:", err)
+// 		return false
+// 	}
+// 	defer out.Close()
 
-	err = jpeg.Encode(out, resizedImg, nil)
-	if err != nil {
-		log.Println("Error encoding image:", err)
-		return false
-	}
+// 	err = jpeg.Encode(out, resizedImg, nil)
+// 	if err != nil {
+// 		log.Println("Error encoding image:", err)
+// 		return false
+// 	}
 
-	return true
-}
+// 	return true
+// }

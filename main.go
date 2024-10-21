@@ -72,15 +72,15 @@ func main() {
 		w.Write([]byte("API running!"))
 	}).Methods("GET")
 	r.HandleFunc("/ws", websockets.StreamVideoCapture) // Endpoint para WebSocket
-	http.HandleFunc("/image", func(w http.ResponseWriter, r *http.Request) {
-		// Verifica se a imagem existe
-		imgPath := "./websocket/image.jpg"
-		if _, err := os.Stat(imgPath); err == nil {
-			http.ServeFile(w, r, imgPath) // Serve a imagem atual
-		} else {
-			http.Error(w, "Image not found", http.StatusNotFound)
-		}
-	})
+	// http.HandleFunc("/image", func(w http.ResponseWriter, r *http.Request) {
+	// 	// Verifica se a imagem existe
+	// 	imgPath := "./websocket/image.jpg"
+	// 	if _, err := os.Stat(imgPath); err == nil {
+	// 		http.ServeFile(w, r, imgPath) // Serve a imagem atual
+	// 	} else {
+	// 		http.Error(w, "Image not found", http.StatusNotFound)
+	// 	}
+	// })
 	// Iniciando o servidor HTTP usando o roteador 'r'
 	log.Println("Server running on port 8080")
 	if err := http.ListenAndServe(":8080", r); err != nil { // Passando 'r' como segundo argumento
