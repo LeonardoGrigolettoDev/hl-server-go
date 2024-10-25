@@ -5,4 +5,5 @@ type Device struct {
 	Name        string `json:"name"`
 	Device_type string `json:"device_type"`
 	Mac         string `json:"mac_address"`
+	Created_at  string `json:"created_at"`
 }

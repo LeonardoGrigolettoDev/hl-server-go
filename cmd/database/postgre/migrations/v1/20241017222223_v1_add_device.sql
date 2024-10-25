@@ -3,7 +3,7 @@
 SELECT 'up SQL query';
 -- +goose StatementEnd
 CREATE TABLE device (
-    id BIGINT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     device_type VARCHAR(255) NOT NULL,
     mac VARCHAR(255) NOT NULL,

@@ -45,7 +45,11 @@ func main() {
 			"message": "pong",
 		})
 	})
-	server.GET("/api/device", DeviceControler.GetDevices)
+	//	DEVICE
+	server.GET("/api/devices", DeviceControler.GetDevices)
+	server.POST("/api/device", DeviceControler.CreateDevice)
+	server.GET("/api/device/:id", DeviceControler.GetDeviceById)
+	server.PUT("/api/device/:id", DeviceControler.UpdateDeviceById)
 
 	// r.HandleFunc("/ws", websockets.StreamVideoCapture) // Endpoint para WebSocket
 	// http.HandleFunc("/image", func(w http.ResponseWriter, r *http.Request) {
