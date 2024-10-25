@@ -5,6 +5,7 @@ import (
 
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/controller"
 	postgres "github.com/LeonardoGrigolettoDev/hl-server-go/cmd/database/postgre"
+	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/mqtt"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/redis"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/repository"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/usecase"
@@ -14,7 +15,7 @@ import (
 )
 
 func init() {
-	err := godotenv.Load()
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error on load file .env: %v", err)
 	}
@@ -29,7 +30,7 @@ func main() {
 	defer db.Close()
 
 	server := gin.Default()
-
+	mqtt.StartMQTTListen()
 	redis.ConnectRedis()
 
 	//Repository layer

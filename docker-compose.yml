@@ -1,17 +1,20 @@
 version: '3.8'
 
 services:
-  hl_server_go:
-    container_name: hl_server_go
-    image: hl_server_go
-    build: ./cmd
-    ports:
-      - "8080:8080"
-    depends_on:
-      - hl_postgres
+  # hl_server_go:
+  #   container_name: hl_server_go
+  #   image: hl_server_go
+  #   build: .
+  #   ports:
+  #     - "8080:8080"
+  #   depends_on:
+  #     - hl_postgres
+  #   volumes:
+  #     - ./cmd/.env:/home/dev/Projects/hl-server-go/cmd/.env 
+
   hl_postgres:
     image: postgres:latest
-    container_name: postgres
+    container_name: hl_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234

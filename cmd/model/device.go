@@ -1,8 +1,7 @@
 package model
 
 type Device struct {
-	ID          int    `json:"id_device"`
-	Name        string `json:"name"`
+	ID          string `json:"id"`
 	Device_type string `json:"device_type"`
 	Mac         string `json:"mac_address"`
 	Created_at  string `json:"created_at"`

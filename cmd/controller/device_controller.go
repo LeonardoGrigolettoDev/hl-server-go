@@ -94,17 +94,9 @@ func (d *deviceController) UpdateDeviceById(ctx *gin.Context) {
 		return
 	}
 
-	deviceId, err := strconv.Atoi(id)
-	if err != nil {
-		response := model.Response{
-			Message: "Device ID is not valid.",
-		}
-		ctx.JSON(http.StatusBadRequest, response)
-		return
-	}
 	var device model.Device
-	device.ID = deviceId
-	err = ctx.BindJSON(&device)
+	device.ID = id
+	err := ctx.BindJSON(&device)
 	if err != nil {
 		fmt.Println(err)
 		ctx.JSON(http.StatusBadRequest, err)
