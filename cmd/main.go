@@ -9,6 +9,7 @@ import (
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/redis"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/repository"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/usecase"
+	websockets "github.com/LeonardoGrigolettoDev/hl-server-go/cmd/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv" // Importando o godotenv
 	_ "github.com/lib/pq"
@@ -41,27 +42,13 @@ func main() {
 	DeviceControler := controller.NewDeviceController(DeviceUseCase)
 
 	//Routes
-	server.GET("/ping", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
 	//	DEVICE
 	server.GET("/api/devices", DeviceControler.GetDevices)
 	server.POST("/api/device", DeviceControler.CreateDevice)
 	server.GET("/api/device/:id", DeviceControler.GetDeviceById)
 	server.PUT("/api/device/:id", DeviceControler.UpdateDeviceById)
-
-	// r.HandleFunc("/ws", websockets.StreamVideoCapture) // Endpoint para WebSocket
-	// http.HandleFunc("/image", func(w http.ResponseWriter, r *http.Request) {
-	// 	// Verifica se a imagem existe
-	// 	imgPath := "./websocket/image.jpg"
-	// 	if _, err := os.Stat(imgPath); err == nil {
-	// 		http.ServeFile(w, r, imgPath) // Serve a imagem atual
-	// 	} else {
-	// 		http.Error(w, "Image not found", http.StatusNotFound)
-	// 	}
-	// })
+	server.GET("/ws", websockets.StreamVideoCapture)
+	server.POST("/api/ws/device/publish", websockets.PublishMessage)
 	server.Run(":8080")
 	log.Println("Server running on port 8080")
 }

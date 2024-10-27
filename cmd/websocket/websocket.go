@@ -1,77 +1,107 @@
 package websockets
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"sync"
 
-	_ "image/png"
-
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+type StreamMessage struct {
+	Device string `json:"device"`
+	Stream int    `json:"stream"` // 1 ou 0
 }
 
-func StreamVideoCapture(w http.ResponseWriter, r *http.Request) {
-	// Atualizando para WebSocket
-	conn, err := upgrader.Upgrade(w, r, nil)
+var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+var connections = make(map[*websocket.Conn]bool) // Armazena as conexões ativas
+var mu sync.Mutex                                // Mutex para proteger as conexões
+
+func StreamVideoCapture(c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("Error upgrading to WebSocket:", err)
+		c.JSON(500, gin.H{"error": "Failed to upgrade connection"})
 		return
 	}
 	defer conn.Close()
 
+	mu.Lock()
+	connections[conn] = true // Adiciona a nova conexão
+	mu.Unlock()
+
+	log.Println("WebSocket connection established")
+
+	// Recebe mensagens do cliente
 	for {
-		// Recebendo mensagem via WebSocket
-		_, message, err := conn.ReadMessage()
+		// Aguardar a próxima mensagem do cliente
+		messageType, r, err := conn.NextReader() // Lê a próxima mensagem
 		if err != nil {
-			log.Println("Error reading message:", err)
+			log.Println("WebSocket connection closed:", err)
 			break
 		}
-		fmt.Println(message)
 
-		// Verificando se é uma imagem válida
-		// if isValidImage(message) {
-		// 	// Salvando a imagem no disco
-		// 	err = ioutil.WriteFile("image.jpg", message, 0644)
-		// 	if err != nil {
-		// 		log.Println("Error saving image:", err)
-		// 	}
-		// } else {
-		// 	log.Println("Received invalid image")
-		// }
+		// Para mensagens de texto ou binárias
+		var buffer bytes.Buffer
+		if _, err := io.Copy(&buffer, r); err != nil {
+			log.Println("Error reading message:", err)
+			continue
+		}
+
+		// Agora você pode imprimir o conteúdo do buffer
+		log.Printf("Received message of type %d: %s\n", messageType, buffer.String())
+
+		// Enviar a mensagem para todas as conexões
+		mu.Lock()
+		for conn := range connections {
+			err := conn.WriteMessage(messageType, buffer.Bytes())
+			if err != nil {
+				log.Println("Error sending message:", err)
+				conn.Close()
+				delete(connections, conn) // Remove a conexão se houver erro
+			}
+		}
+		mu.Unlock()
 	}
+
+	mu.Lock()
+	delete(connections, conn) // Remove a conexão quando ela é fechada
+	mu.Unlock()
+	log.Println("WebSocket connection closed")
 }
 
-// func isValidImage(imageBytes []byte) bool {
-// 	img, _, err := image.Decode(bytes.NewReader(imageBytes))
-// 	if err != nil {
-// 		log.Println("Invalid image:", err)
-// 		return false
-// 	}
+func PublishMessage(c *gin.Context) {
+	var msg StreamMessage
 
-// 	// (Opcional) Redimensionar a imagem se necessário
-// 	resizedImg := resize.Resize(800, 0, img, resize.Lanczos3)
+	// Tenta decodificar a mensagem JSON recebida
+	if err := c.ShouldBindJSON(&msg); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
 
-// 	// Salvar a imagem redimensionada (caso necessário)
-// 	out, err := ioutil.TempFile(".", "resized_*.jpg")
-// 	if err != nil {
-// 		log.Println("Error creating temp file:", err)
-// 		return false
-// 	}
-// 	defer out.Close()
+	// Converte a estrutura de mensagem para JSON
+	messageJSON, err := json.Marshal(msg)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error marshaling message"})
+		return
+	}
 
-// 	err = jpeg.Encode(out, resizedImg, nil)
-// 	if err != nil {
-// 		log.Println("Error encoding image:", err)
-// 		return false
-// 	}
+	log.Println("Publishing message:", string(messageJSON))
+	c.JSON(http.StatusOK, gin.H{"status": "Message sent", "message": string(messageJSON)})
 
-// 	return true
-// }
+	mu.Lock()
+	// Enviar a mensagem para todas as conexões
+	for conn := range connections {
+		err := conn.WriteMessage(websocket.TextMessage, messageJSON)
+		if err != nil {
+			log.Println("Error sending message:", err)
+			conn.Close()
+			delete(connections, conn) // Remove a conexão se houver erro
+		}
+	}
+	mu.Unlock()
+}
