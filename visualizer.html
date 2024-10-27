@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Stream</h1>
+    <canvas id="videoCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('videoCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Defina as dimensões do canvas
+        canvas.width = 640;  // Largura desejada
+        canvas.height = 480; // Altura desejada
+        
+        // Certifique-se de inserir o IP local do servidor
+        const ws = new WebSocket('ws://192.168.15.117:8080/ws');
+
+        ws.onopen = () => {
+            console.log('Conexão WebSocket aberta.');
+        };
+
+        ws.onmessage = (event) => {
+            console.log('Dados recebidos do WebSocket');
+            // Aqui você poderá renderizar o vídeo ao vivo
+            const blob = new Blob([event.data], { type: 'image/jpeg' });
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpa o canvas antes de desenhar a nova imagem
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Ajusta a imagem para preencher o canvas
+            };
+            img.src = URL.createObjectURL(blob);
+        };
+
+        ws.onerror = (error) => {
+            console.error('Erro no WebSocket:', error);
+        };
+
+        ws.onclose = () => {
+            console.log('Conexão WebSocket fechada.');
+        };
+    </script>
+</body>
+</html>
