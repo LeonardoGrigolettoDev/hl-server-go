@@ -43,12 +43,13 @@ func main() {
 
 	//Routes
 	//	DEVICE
-	server.GET("/api/devices", DeviceControler.GetDevices)
-	server.POST("/api/device", DeviceControler.CreateDevice)
-	server.GET("/api/device/:id", DeviceControler.GetDeviceById)
-	server.PUT("/api/device/:id", DeviceControler.UpdateDeviceById)
-	server.GET("/ws", websockets.StreamVideoCapture)
-	server.POST("/api/ws/device/publish", websockets.PublishMessage)
+	server.GET("/devices", DeviceControler.GetDevices)
+	server.POST("/device", DeviceControler.CreateDevice)
+	server.GET("/device/:id", DeviceControler.GetDeviceById)
+	server.PUT("/device/:id", DeviceControler.UpdateDeviceById)
+	server.GET("/device/capture/:id", websockets.StreamVideoCapture)
+	server.GET("/device/stream/:id", websockets.StreamVideoHandler)
+	server.POST("/device/publish", websockets.PublishDeviceMessage)
 	server.Run(":8080")
 	log.Println("Server running on port 8080")
 }

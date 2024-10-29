@@ -17,7 +17,7 @@
         canvas.height = 480; // Altura desejada
         
         // Certifique-se de inserir o IP local do servidor
-        const ws = new WebSocket('ws://192.168.15.117:8080/ws');
+        const ws = new WebSocket('ws://192.168.15.117:8080/device/stream/5C4610F7A608');
 
         ws.onopen = () => {
             console.log('Conexão WebSocket aberta.');

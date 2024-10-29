@@ -1,12 +1,14 @@
 package websockets
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"io"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/redis"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -17,11 +19,23 @@ type StreamMessage struct {
 	Stream int    `json:"stream"` // 1 ou 0
 }
 
-var upgrader = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
-var connections = make(map[*websocket.Conn]bool) // Armazena as conexões ativas
-var mu sync.Mutex                                // Mutex para proteger as conexões
+var (
+	upgrader = websocket.Upgrader{ReadBufferSize: 1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			// Permite conexões de qualquer origem (ajuste conforme necessário)
+			return true
+		}} // Use this to upgrade HTTP connection to WebSocket
+	clients     = make(map[string][]*websocket.Conn) // Map to store clients for each iddevice
+	clientsMux  = sync.Mutex{}
+	devices     = make(map[string][]*websocket.Conn) // Map to store clients for each iddevice
+	devicesMux  = sync.Mutex{}                       // Mutex for safe access to clients map
+	redisClient = redis.ConnectRedis()
+	ctx         = context.Background()
+)
 
 func StreamVideoCapture(c *gin.Context) {
+	deviceId := c.Param("id")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("Error upgrading to WebSocket:", err)
@@ -30,51 +44,72 @@ func StreamVideoCapture(c *gin.Context) {
 	}
 	defer conn.Close()
 
-	mu.Lock()
-	connections[conn] = true // Adiciona a nova conexão
-	mu.Unlock()
+	devicesMux.Lock()
+	devices[deviceId] = append(devices[deviceId], conn)
+	devicesMux.Unlock()
 
+	defer func() {
+		devicesMux.Lock()
+		for i, c := range devices[deviceId] {
+			if c == conn {
+				devices[deviceId] = append(devices[deviceId][:i], devices[deviceId][i+1:]...)
+				break
+			}
+		}
+		devicesMux.Unlock()
+	}()
 	log.Println("WebSocket connection established")
-
-	// Recebe mensagens do cliente
 	for {
-		// Aguardar a próxima mensagem do cliente
-		messageType, r, err := conn.NextReader() // Lê a próxima mensagem
+		_, r, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("WebSocket connection closed:", err)
 			break
 		}
-
-		// Para mensagens de texto ou binárias
-		var buffer bytes.Buffer
-		if _, err := io.Copy(&buffer, r); err != nil {
-			log.Println("Error reading message:", err)
-			continue
-		}
-
-		// Agora você pode imprimir o conteúdo do buffer
-		log.Printf("Received message of type %d: %s\n", messageType, buffer.String())
-
-		// Enviar a mensagem para todas as conexões
-		mu.Lock()
-		for conn := range connections {
-			err := conn.WriteMessage(messageType, buffer.Bytes())
-			if err != nil {
-				log.Println("Error sending message:", err)
-				conn.Close()
-				delete(connections, conn) // Remove a conexão se houver erro
-			}
-		}
-		mu.Unlock()
+		fmt.Println("Publishing on: " + "device:" + deviceId)
+		redisClient.Publish(ctx, "device:"+deviceId, r)
 	}
-
-	mu.Lock()
-	delete(connections, conn) // Remove a conexão quando ela é fechada
-	mu.Unlock()
 	log.Println("WebSocket connection closed")
 }
 
-func PublishMessage(c *gin.Context) {
+func StreamVideoHandler(c *gin.Context) {
+	deviceId := c.Param("id")
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	clientsMux.Lock()
+	clients[deviceId] = append(clients[deviceId], conn)
+	clientsMux.Unlock()
+
+	defer func() {
+		clientsMux.Lock()
+		for i, c := range clients[deviceId] {
+			if c == conn {
+				clients[deviceId] = append(clients[deviceId][:i], clients[deviceId][i+1:]...)
+				break
+			}
+		}
+		clientsMux.Unlock()
+	}()
+	pubsub := redisClient.Subscribe(ctx, "device:"+deviceId)
+	defer pubsub.Close()
+
+	for msg := range pubsub.Channel() {
+		// Redistribui a mensagem para os clientes conectados
+		clientsMux.Lock()
+		for _, clientConn := range clients[deviceId] {
+			err := clientConn.WriteMessage(websocket.BinaryMessage, []byte(msg.Payload))
+			if err != nil {
+				clientConn.Close()
+			}
+		}
+		clientsMux.Unlock()
+	}
+}
+
+func PublishDeviceMessage(c *gin.Context) {
 	var msg StreamMessage
 
 	// Tenta decodificar a mensagem JSON recebida
@@ -82,7 +117,7 @@ func PublishMessage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
-
+	deviceId := msg.Device
 	// Converte a estrutura de mensagem para JSON
 	messageJSON, err := json.Marshal(msg)
 	if err != nil {
@@ -91,17 +126,23 @@ func PublishMessage(c *gin.Context) {
 	}
 
 	log.Println("Publishing message:", string(messageJSON))
+	broadcastMessageDevices(deviceId, messageJSON)
 	c.JSON(http.StatusOK, gin.H{"status": "Message sent", "message": string(messageJSON)})
+}
 
-	mu.Lock()
-	// Enviar a mensagem para todas as conexões
-	for conn := range connections {
-		err := conn.WriteMessage(websocket.TextMessage, messageJSON)
-		if err != nil {
-			log.Println("Error sending message:", err)
-			conn.Close()
-			delete(connections, conn) // Remove a conexão se houver erro
-		}
+// func broadcastMessageClients(idDevice string, message []byte) {
+// 	clientsMux.Lock()
+// 	for _, conn := range clients[idDevice] {
+// 		conn.WriteMessage(websocket.TextMessage, message)
+// 		fmt.Println("sending stream" + idDevice)
+// 	}
+// 	clientsMux.Unlock()
+// }
+
+func broadcastMessageDevices(idDevice string, message []byte) {
+	devicesMux.Lock()
+	for _, conn := range devices[idDevice] {
+		conn.WriteMessage(websocket.TextMessage, message)
 	}
-	mu.Unlock()
+	devicesMux.Unlock()
 }
