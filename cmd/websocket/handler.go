@@ -34,7 +34,7 @@ var (
 	ctx         = context.Background()
 )
 
-func StreamVideoCapture(c *gin.Context) {
+func VideoCaptureHandler(c *gin.Context) {
 	deviceId := c.Param("id")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -71,7 +71,7 @@ func StreamVideoCapture(c *gin.Context) {
 	log.Println("WebSocket connection closed")
 }
 
-func StreamVideoHandler(c *gin.Context) {
+func WatchVideoHandler(c *gin.Context) {
 	deviceId := c.Param("id")
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

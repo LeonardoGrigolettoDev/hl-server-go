@@ -70,8 +70,8 @@ func main() {
 	server.GET("/device/:id", DeviceControler.GetDeviceById)
 	server.PUT("/device/:id", DeviceControler.UpdateDeviceById)
 	//		COMMUNICATION (WebSocket)
-	server.GET("/device/capture/:id", websockets.StreamVideoCapture)
-	server.GET("/device/stream/:id", websockets.StreamVideoHandler)
+	server.GET("/device/capture/:id", websockets.VideoCaptureHandler)
+	server.GET("/device/stream/:id", websockets.WatchVideoHandler)
 	server.POST("/device/publish", websockets.PublishDeviceMessage)
 
 	server.Run(":8080")
