@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	redis "github.com/go-redis/redis/v8"
 )
@@ -13,9 +14,9 @@ var ctx = context.Background()
 // Inicializar a conexão com o Redis
 func ConnectRedis() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // endereço do Redis
-		Password: "",               // sem senha, por padrão
-		DB:       0,                // usar o banco de dados padrão
+		Addr:     os.Getenv("REDIS_ADDR"), // endereço do Redis
+		Password: os.Getenv("REDIS_PASS"), // sem senha, por padrão
+		DB:       0,                       // usar o banco de dados padrão
 	})
 
 	// Testando a conexão
