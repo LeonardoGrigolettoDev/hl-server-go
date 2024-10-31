@@ -7,7 +7,7 @@ import (
 
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/controller"
 	postgres "github.com/LeonardoGrigolettoDev/hl-server-go/cmd/database/postgre"
-	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/mqtt_client"
+	mqtt_client "github.com/LeonardoGrigolettoDev/hl-server-go/cmd/mqtt-client"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/redis"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/repository"
 	"github.com/LeonardoGrigolettoDev/hl-server-go/cmd/usecase"
